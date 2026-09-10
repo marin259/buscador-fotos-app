@@ -23,7 +23,7 @@ if btn_buscar:
     elif not referencia_buscada:
         st.warning("Por favor, ingresa una referencia para buscar.")
     else:
-        with st.spinner("Analizando imágenes (nombre y contenido OCR)..."):
+        with st.spinner("Buscando de forma rápida..."):
             resultados = []
             
             for uploaded_file in uploaded_files:
@@ -36,24 +36,19 @@ if btn_buscar:
                     coincidencia = True
                     tipo_coincidencia = "Nombre de archivo"
                 else:
-                    # B. Buscar dentro de la imagen usando OCR con rotación automática
+                    # B. OCR optimizado en una sola pasada con detección automática de orientación (--psm 11)
                     try:
                         image_bytes = uploaded_file.read()
                         imagen = Image.open(io.BytesIO(image_bytes))
                         
-                        # Probamos la imagen original y rotada 90, 180 y 270 grados 
-                        # para asegurar que lea etiquetas de lado o de cabeza
-                        angulos = [0, 90, 180, 270]
-                        texto_acumulado = ""
+                        # --psm 11 busca texto disperso o en cualquier orientación de forma rápida
+                        custom_config = r'--oem 3 --psm 11'
+                        texto_imagen = pytesseract.image_to_string(imagen, config=custom_config)
                         
-                        for angulo in angulos:
-                            img_rotada = imagen.rotate(angulo, expand=True)
-                            texto_acumulado += "\n" + pytesseract.image_to_string(img_rotada)
-                        
-                        if referencia_buscada.lower() in texto_acumulado.lower():
+                        if referencia_buscada.lower() in texto_imagen.lower():
                             coincidencia = True
                             tipo_coincidencia = "Contenido (OCR)"
-                    except Exception as e:
+                    except Exception:
                         pass
                 
                 if coincidencia:
