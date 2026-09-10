@@ -23,7 +23,7 @@ if btn_buscar:
     elif not referencia_buscada:
         st.warning("Por favor, ingresa una referencia para buscar.")
     else:
-        with st.spinner("Búsqueda instantánea en curso..."):
+        with st.spinner("Buscando en la foto..."):
             resultados = []
             
             for uploaded_file in uploaded_files:
@@ -36,21 +36,20 @@ if btn_buscar:
                     coincidencia = True
                     tipo_coincidencia = "Nombre de archivo"
                 else:
-                    # B. OCR ultra rápido con redimensionamiento previo de la imagen
+                    # B. OCR robusto para etiquetas múltiples (modo bloque de texto --psm 6)
                     try:
                         image_bytes = uploaded_file.read()
                         imagen = Image.open(io.BytesIO(image_bytes))
                         
-                        # Redimensionar la imagen para aligerar el procesamiento de Tesseract
-                        # Si el ancho es mayor a 1000 píxeles, lo escalamos proporcionalmente
-                        max_ancho = 1000
+                        # Usar un ancho un poco mayor (1600px) para no perder detalle en fotos con varios bultos
+                        max_ancho = 1600
                         if imagen.width > max_ancho:
                             proporcion = max_ancho / float(imagen.width)
                             nuevo_alto = int(float(imagen.height) * proporcion)
                             imagen = imagen.resize((max_ancho, nuevo_alto), Image.Resampling.LANCZOS)
                         
-                        # Configuración rápida para texto disperso
-                        custom_config = r'--oem 3 --psm 11'
+                        # --psm 6 asume un bloque uniforme de texto, excelente para etiquetas impresas
+                        custom_config = r'--oem 3 --psm 6'
                         texto_imagen = pytesseract.image_to_string(imagen, config=custom_config)
                         
                         if referencia_buscada.lower() in texto_imagen.lower():
